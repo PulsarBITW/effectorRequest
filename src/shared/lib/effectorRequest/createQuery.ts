@@ -1,0 +1,47 @@
+import { attach, sample } from "effector";
+
+import type { BaseHandler, QueryConfig, TypeOrVoid } from "./types";
+import { createAbortController } from "./createAbortController";
+import { fxToQuery } from "./fxToQuery";
+
+export function createQuery<FN extends BaseHandler>(config: QueryConfig<FN>) {
+  const { handler, name, strategy = "EVERY", abortAllTrigger } = config;
+
+  const { $abortController, abortFx } = createAbortController();
+
+  /** internal effect */
+  const _fx = attach({
+    name,
+    source: $abortController,
+    effect: (
+      abortController,
+      params: TypeOrVoid<Parameters<FN>[1]>
+    ): ReturnType<FN> => handler(abortController.signal, params),
+  });
+
+  const query = fxToQuery<typeof _fx, TypeOrVoid<Parameters<FN>[1]>>(_fx);
+
+  if (strategy === "TAKE_LATEST") {
+    // Important - call abortFx before call __fx
+    sample({
+      clock: query.start,
+      target: abortFx,
+    });
+  }
+
+  if (abortAllTrigger) {
+    // Important - call abortFx before call __fx
+    // @ts-expect-error Type is correct but TypeScript fails due to missing type exports from effector library
+    sample({
+      clock: abortAllTrigger,
+      target: abortFx,
+    });
+  }
+
+  sample({
+    clock: query.start,
+    target: _fx,
+  });
+
+  return query;
+}

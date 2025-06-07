@@ -1,17 +1,28 @@
-import { createEvent } from "effector";
-import type { AnyEffect, Query } from "./types";
+import { createEvent, type Effect } from "effector";
 
-export function fxToQuery<FX extends AnyEffect, Payload>(
-  effect: FX
-): Query<FX, Payload> {
-  const { done, doneData, fail, failData, pending } = effect;
+import type { Query } from "./types";
 
-  return {
-    start: createEvent<Payload>(),
+export function fxToQuery<Params, Done, Fail = Error>(
+  effect: Effect<Params, Done, Fail>
+): Query<Params, Done, Fail> {
+  const {
     done,
     doneData,
     fail,
     failData,
     pending,
+    inFlight,
+    finally: finallyEvent,
+  } = effect;
+
+  return {
+    start: createEvent<Params>(),
+    done,
+    doneData,
+    fail,
+    failData,
+    pending,
+    inFlight,
+    finally: finallyEvent,
   };
 }

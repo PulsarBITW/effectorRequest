@@ -1,7 +1,3 @@
-export type GetResourceQueryParams = {
-  limit?: number;
-};
-
 type UserDto = {
   id: number;
   firstName: string;
@@ -73,7 +69,11 @@ type UserDto = {
   role: string;
 };
 
-type GetResourceResponseDto = {
+export type GetUsersQueryParams = {
+  limit?: number;
+};
+
+export type GetUsersResponseDto = {
   users: UserDto[];
   total: number;
   limit: number;
@@ -81,9 +81,9 @@ type GetResourceResponseDto = {
 };
 
 export async function getUsers(
-  queryParams: GetResourceQueryParams,
+  queryParams: GetUsersQueryParams,
   signal: AbortSignal
-): Promise<GetResourceResponseDto> {
+): Promise<GetUsersResponseDto> {
   const url = new URL("https://dummyjson.com/users");
 
   if (queryParams.limit) {
@@ -92,5 +92,5 @@ export async function getUsers(
 
   const response = await fetch(url, { signal });
 
-  return (await response.json()) as GetResourceResponseDto;
+  return (await response.json()) as GetUsersResponseDto;
 }

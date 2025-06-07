@@ -1,10 +1,10 @@
 import { attach, sample } from "effector";
 
-import type { BaseHandler, QueryConfig, TypeOrVoid } from "./types";
+import type { QueryConfig } from "./types";
 import { createAbortController } from "./createAbortController";
 import { fxToQuery } from "./fxToQuery";
 
-export function createQuery<FN extends BaseHandler>(config: QueryConfig<FN>) {
+export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
   const { handler, name, strategy = "EVERY", abortAllTrigger } = config;
 
   const { $abortController, abortFx } = createAbortController();
@@ -13,13 +13,11 @@ export function createQuery<FN extends BaseHandler>(config: QueryConfig<FN>) {
   const _fx = attach({
     name,
     source: $abortController,
-    effect: (
-      abortController,
-      params: TypeOrVoid<Parameters<FN>[1]>
-    ): ReturnType<FN> => handler(abortController.signal, params),
+    effect: (abortController, params: Params): Done =>
+      handler(abortController.signal, params),
   });
 
-  const query = fxToQuery<typeof _fx, TypeOrVoid<Parameters<FN>[1]>>(_fx);
+  const query = fxToQuery(_fx);
 
   if (strategy === "TAKE_LATEST") {
     // Important - call abortFx before call __fx

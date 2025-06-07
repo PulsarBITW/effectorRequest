@@ -12,8 +12,7 @@ const getResourceQuery = createQuery({
   name: "getResourceQuery",
   abortAllTrigger: abortRequests,
   strategy: "TAKE_LATEST",
-  handler: async (signal, params: GetResourceQueryParams) =>
-    getUsers(params, signal),
+  handler: (signal, params: GetResourceQueryParams) => getUsers(params, signal),
 });
 
 sample({

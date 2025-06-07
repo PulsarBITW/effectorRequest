@@ -5,20 +5,20 @@ import { getUsers, type GetUsersQueryParams } from "./api";
 
 const appStarted = createEvent();
 
-const requestStarted = createEvent();
-const abortRequests = createEvent();
+const requestForced = createEvent();
+const requestAbortForced = createEvent();
 
-const getResourceQuery = createQuery({
+const getUsersQuery = createQuery({
   name: "getResourceQuery",
-  abortAllTrigger: abortRequests,
+  abortAllTrigger: requestAbortForced,
   strategy: "TAKE_LATEST",
   handler: (signal, params: GetUsersQueryParams) => getUsers(params, signal),
 });
 
 sample({
-  clock: requestStarted,
+  clock: [appStarted, requestForced],
   fn: () => ({ limit: 10 }),
-  target: getResourceQuery.start,
+  target: getUsersQuery.start,
 });
 
-export const appModel = { appStarted, requestStarted, abortRequests };
+export const appModel = { appStarted, requestForced, requestAbortForced };

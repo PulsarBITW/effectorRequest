@@ -37,3 +37,22 @@ export interface Query<Params, Done, Fail = Error>
   extends OmittedEffect<Params, Done, Fail> {
   start: EventCallable<Params>;
 }
+
+export type MemoryCacheValue<Done> = { value: Done; expiresAt: number | null };
+export type MemoryCacheItem<Done> = {
+  key: string;
+  value: MemoryCacheValue<Done>;
+};
+export type MemoryCache<Done> = Map<string, MemoryCacheValue<Done>>;
+
+export type CreateMemoryCacheConfig = {
+  cacheMaxSize?: number;
+};
+export interface ClientCacheQueryConfig<Params, Done>
+  extends QueryConfig<Params, Done> {
+  cacheTTL?: number;
+  cacheResetTrigger?: Units;
+  /** @default 100*/
+  cacheMaxSize?: number;
+  // createCacheKey?: (params: Params) => string;
+}

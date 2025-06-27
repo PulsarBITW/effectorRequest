@@ -58,33 +58,3 @@ function isPlainObject(o: unknown): o is Object {
   // Most likely a plain Object
   return true;
 }
-
-// console.log(
-//   "should hash primitives correctly",
-//   `["test"]`,
-//   hashKey(["test"]) === JSON.stringify(["test"]),
-//   `["123"]`,
-//   hashKey([123]) === JSON.stringify([123]),
-//   `["null"]`,
-//   hashKey([null]) === JSON.stringify([null])
-// );
-
-// console.log(
-//   "should hash objects with sorted keys consistently",
-//   `[{ b: 2, a: 1 }] and [{ a: 1, b: 2 }]`,
-//   hashKey([{ b: 2, a: 1 }]) === hashKey([{ a: 1, b: 2 }])
-// );
-
-// console.log(
-//   "should hash arrays consistently",
-//   `[{ b: 2, a: 1 }, "test", 123] and [{ a: 1, b: 2 }, "test", 123]`,
-//   hashKey([{ b: 2, a: 1 }, "test", 123]) ===
-//     hashKey([{ a: 1, b: 2 }, "test", 123])
-// );
-
-// console.log(
-//   "should handle nested objects with sorted keys",
-//   `[{ a: { d: 4, c: 3 }, b: 2 }] and [{ b: 2, a: { c: 3, d: 4 } }]`,
-//   hashKey([{ a: { d: 4, c: 3 }, b: 2 }]) ===
-//     hashKey([{ b: 2, a: { c: 3, d: 4 } }])
-// );

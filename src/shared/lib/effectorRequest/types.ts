@@ -12,9 +12,37 @@ export type BaseHandler<Params, Done> = (
 
 export type Strategy = "EVERY" | "TAKE_LATEST";
 
+type OmittedEffect<Params, Done, Fail = Error> = Pick<
+  Effect<Params, Done, Fail>,
+  "done" | "doneData" | "fail" | "failData" | "finally" | "pending" | "inFlight"
+>;
+
+export type MemoryCacheValue<Done> = { result: Done; expiresAt: number | null };
+export type MemoryCacheItem<Done> = {
+  key: string;
+  value: MemoryCacheValue<Done>;
+};
+export type MemoryCache<Done> = Map<string, MemoryCacheValue<Done>>;
+
+export type CacheOptions = {
+  /** Maximum age of cache entry in milliseconds (ms) */
+  maxAge?: number;
+  /** Maximum cache size, default `100` */
+  maxSize?: number;
+  /** Cache reset trigger */
+  resetTrigger?: Units;
+};
+
+export interface Query<Params, Done, Fail = Error>
+  extends OmittedEffect<Params, Done, Fail> {
+  start: EventCallable<Params>;
+}
+
 export type QueryConfig<Params, Done> = {
   /** Handler function that will be called with abort signal and params */
   handler: BaseHandler<Params, Done>;
+  /** Optional name for the query */
+  name?: string;
   /**
    * Request cancellation strategy
    * @default "EVERY"
@@ -22,37 +50,16 @@ export type QueryConfig<Params, Done> = {
    * - "TAKE_LATEST" - cancels all requests except the latest one
    */
   strategy?: Strategy;
-  /** Event or array of events that will trigger request cancellation */
+  /**
+   * Trigger or array of triggers that will cause all requests to be aborted.
+   * Useful for global cancellation scenarios (e.g., logout, navigation, page close, etc.)
+   */
   abortAllTrigger?: Units;
-  /** Optional name for the query */
-  name?: string;
+  /**
+   * Enables in-memory caching for the query. Can be set to `true` to use default cache settings,
+   * or an object to provide custom cache options.
+   * When enabled, repeated requests with the same parameters will return cached results
+   * until the cache entry expires or is invalidated.
+   */
+  cache?: boolean | CacheOptions;
 };
-
-type OmittedEffect<Params, Done, Fail = Error> = Pick<
-  Effect<Params, Done, Fail>,
-  "done" | "doneData" | "fail" | "failData" | "finally" | "pending" | "inFlight"
->;
-
-export interface Query<Params, Done, Fail = Error>
-  extends OmittedEffect<Params, Done, Fail> {
-  start: EventCallable<Params>;
-}
-
-export type MemoryCacheValue<Done> = { value: Done; expiresAt: number | null };
-export type MemoryCacheItem<Done> = {
-  key: string;
-  value: MemoryCacheValue<Done>;
-};
-export type MemoryCache<Done> = Map<string, MemoryCacheValue<Done>>;
-
-export type CreateMemoryCacheConfig = {
-  cacheMaxSize?: number;
-};
-export interface ClientCacheQueryConfig<Params, Done>
-  extends QueryConfig<Params, Done> {
-  cacheTTL?: number;
-  cacheResetTrigger?: Units;
-  /** @default 100*/
-  cacheMaxSize?: number;
-  // createCacheKey?: (params: Params) => string;
-}

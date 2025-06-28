@@ -1,6 +1,6 @@
 import { createEvent, createStore, sample } from "effector";
 
-import { createClientCacheQuery } from "@shared/lib/effectorRequest";
+import { createQuery } from "@shared/lib/effectorRequest";
 import {
   getUsers,
   type GetUsersResponseDto,
@@ -13,14 +13,16 @@ const requestForced = createEvent();
 const requestAbortForced = createEvent();
 const resetCache = createEvent();
 
-const getUsersQuery = createClientCacheQuery({
+const getUsersQuery = createQuery({
   name: "getUsersQuery",
+  handler: (signal, params: GetUsersQueryParams) => getUsers(params, signal),
   abortAllTrigger: requestAbortForced,
   strategy: "TAKE_LATEST",
-  cacheResetTrigger: resetCache,
-  cacheTTL: 30_000,
-  cacheMaxSize: 5,
-  handler: (signal, params: GetUsersQueryParams) => getUsers(params, signal),
+  cache: {
+    resetTrigger: resetCache,
+    maxAge: 30_000,
+    maxSize: 5,
+  },
 });
 
 const $users = createStore<GetUsersResponseDto | null>(null).on(

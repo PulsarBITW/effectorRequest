@@ -12,9 +12,31 @@ export type BaseHandler<Params, Done> = (
 
 export type Strategy = "EVERY" | "TAKE_LATEST";
 
+type OmittedEffect<Params, Done, Fail = Error> = Pick<
+  Effect<Params, Done, Fail>,
+  "done" | "doneData" | "fail" | "failData" | "finally" | "pending" | "inFlight"
+>;
+
+export type MemoryCacheValue<Done> = { value: Done; expiresAt: number | null };
+export type MemoryCacheItem<Done> = {
+  key: string;
+  value: MemoryCacheValue<Done>;
+};
+export type MemoryCache<Done> = Map<string, MemoryCacheValue<Done>>;
+
+export type CacheOptions = {
+  maxAge?: number;
+  resetTrigger?: Units;
+  /** @default 100*/
+  maxSize?: number;
+};
+
+export interface Query<Params, Done, Fail = Error>
+  extends OmittedEffect<Params, Done, Fail> {
+  start: EventCallable<Params>;
+}
+
 export type QueryConfig<Params, Done> = {
-  /** Handler function that will be called with abort signal and params */
-  handler: BaseHandler<Params, Done>;
   /**
    * Request cancellation strategy
    * @default "EVERY"
@@ -24,35 +46,10 @@ export type QueryConfig<Params, Done> = {
   strategy?: Strategy;
   /** Event or array of events that will trigger request cancellation */
   abortAllTrigger?: Units;
+  /** Handler function that will be called with abort signal and params */
+  handler: BaseHandler<Params, Done>;
+  /** default `false` */
+  cache?: boolean | CacheOptions;
   /** Optional name for the query */
   name?: string;
 };
-
-type OmittedEffect<Params, Done, Fail = Error> = Pick<
-  Effect<Params, Done, Fail>,
-  "done" | "doneData" | "fail" | "failData" | "finally" | "pending" | "inFlight"
->;
-
-export interface Query<Params, Done, Fail = Error>
-  extends OmittedEffect<Params, Done, Fail> {
-  start: EventCallable<Params>;
-}
-
-export type MemoryCacheValue<Done> = { value: Done; expiresAt: number | null };
-export type MemoryCacheItem<Done> = {
-  key: string;
-  value: MemoryCacheValue<Done>;
-};
-export type MemoryCache<Done> = Map<string, MemoryCacheValue<Done>>;
-
-export type CreateMemoryCacheConfig = {
-  cacheMaxSize?: number;
-};
-export interface ClientCacheQueryConfig<Params, Done>
-  extends QueryConfig<Params, Done> {
-  cacheTTL?: number;
-  cacheResetTrigger?: Units;
-  /** @default 100*/
-  cacheMaxSize?: number;
-  // createCacheKey?: (params: Params) => string;
-}

@@ -1,12 +1,11 @@
-import { createEvent, createStore } from "effector";
-import type {
-  MemoryCache,
-  CreateMemoryCacheConfig,
-  MemoryCacheItem,
-} from "./types";
+import { createEvent, createStore, sample } from "effector";
 
-export function createMemoryCache<Done>(config?: CreateMemoryCacheConfig) {
-  const { cacheMaxSize = 100 } = config || {};
+import type { MemoryCache, CacheOptions, MemoryCacheItem } from "./types";
+
+const DEFAULT_CACHE_MAX_SIZE = 100;
+
+export function createMemoryCache<Done>(config?: CacheOptions) {
+  const { maxSize = DEFAULT_CACHE_MAX_SIZE, resetTrigger } = config || {};
 
   const $memoryCache = createStore<{ ref: MemoryCache<Done> }>({
     ref: new Map(),
@@ -17,7 +16,7 @@ export function createMemoryCache<Done>(config?: CreateMemoryCacheConfig) {
   const resetMemoryCache = createEvent();
 
   $memoryCache.on(addToMemoryCache, (cache, { key, value }) => {
-    if (cache.ref.size >= cacheMaxSize) {
+    if (cache.ref.size >= maxSize) {
       const firstKey = cache.ref.keys().next().value;
       if (firstKey !== undefined) {
         cache.ref.delete(firstKey);
@@ -36,10 +35,17 @@ export function createMemoryCache<Done>(config?: CreateMemoryCacheConfig) {
 
   $memoryCache.on(resetMemoryCache, () => ({ ref: new Map() }));
 
+  if (resetTrigger) {
+    // @ts-expect-error Type is correct but TypeScript fails due to missing type exports from effector library
+    sample({
+      clock: resetTrigger,
+      target: resetMemoryCache,
+    });
+  }
+
   return {
     $memoryCache,
     addToMemoryCache,
     deleteFromMemoryCache,
-    resetMemoryCache,
   };
 }

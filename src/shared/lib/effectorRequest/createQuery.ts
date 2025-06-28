@@ -4,7 +4,7 @@ import type { QueryConfig } from "./types";
 import { createAbortController } from "./createAbortController";
 import { fxToQuery } from "./fxToQuery";
 import { hashKey } from "./hashKey";
-import { createMemoryCache } from "./createMemoryCache";
+import { createMemoryCache, isCachedValueExpired } from "./createMemoryCache";
 
 export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
   const { handler, name, strategy = "EVERY", abortAllTrigger, cache } = config;
@@ -18,7 +18,7 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
     const { maxSize, maxAge, resetTrigger } = cache === true ? {} : cache;
 
     const { $memoryCache, addToMemoryCache, deleteFromMemoryCache } =
-      createMemoryCache<Done>({ maxSize, resetTrigger });
+      createMemoryCache<Done>({ maxSize, resetTrigger, maxAge });
 
     _fx = attach({
       name,
@@ -35,18 +35,14 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
         });
 
         const stableKey = hashKey(params);
+        const cachedValue = memoryCache.ref.get(stableKey);
 
-        const cachedItem = memoryCache.ref.get(stableKey);
-
-        if (memoryCache.ref.has(stableKey) && cachedItem !== undefined) {
-          if (
-            !maxAge ||
-            (cachedItem.expiresAt !== null && cachedItem.expiresAt > Date.now())
-          ) {
-            // @Todo - add structuredClone polyfill
-            return structuredClone(cachedItem.value);
-          } else {
+        if (cachedValue !== undefined) {
+          if (maxAge && isCachedValueExpired(cachedValue)) {
             boundDeleteFromMemoryCache(stableKey);
+          } else {
+            // @Todo - add structuredClone polyfill
+            return structuredClone(cachedValue.result);
           }
         }
 
@@ -56,7 +52,7 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
 
         boundAddToMemoryCache({
           key: stableKey,
-          value: { value: result, expiresAt: expiresAt },
+          value: { result, expiresAt },
         });
 
         return result;

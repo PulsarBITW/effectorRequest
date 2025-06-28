@@ -1,11 +1,26 @@
-import { createEvent, createStore, sample } from "effector";
+import {
+  createEffect,
+  createEvent,
+  createStore,
+  sample,
+  scopeBind,
+} from "effector";
 
-import type { MemoryCache, CacheOptions, MemoryCacheItem } from "./types";
+import type {
+  MemoryCache,
+  CacheOptions,
+  MemoryCacheItem,
+  MemoryCacheValue,
+} from "./types";
 
 const DEFAULT_CACHE_MAX_SIZE = 100;
 
 export function createMemoryCache<Done>(config?: CacheOptions) {
-  const { maxSize = DEFAULT_CACHE_MAX_SIZE, resetTrigger } = config || {};
+  const {
+    maxSize = DEFAULT_CACHE_MAX_SIZE,
+    maxAge,
+    resetTrigger,
+  } = config || {};
 
   const $memoryCache = createStore<{ ref: MemoryCache<Done> }>({
     ref: new Map(),
@@ -43,9 +58,45 @@ export function createMemoryCache<Done>(config?: CacheOptions) {
     });
   }
 
+  // handle TTL eviction
+  if (maxAge) {
+    const itemExpired = createEvent<string>();
+
+    const scheduleRemovalFx = createEffect({
+      name: "scheduleRemovalFx",
+      handler: (key: string) => {
+        const boundItemExpired = scopeBind(itemExpired, { safe: true });
+        setTimeout(() => boundItemExpired(key), maxAge);
+      },
+    });
+
+    sample({
+      clock: addToMemoryCache,
+      fn: (payload) => payload.key,
+      target: scheduleRemovalFx,
+    });
+
+    sample({
+      clock: itemExpired,
+      source: $memoryCache,
+      filter: (cache, key) => {
+        const cachedValue = cache.ref.get(key);
+        return cachedValue !== undefined && isCachedValueExpired(cachedValue);
+      },
+      fn: (_, stableKey) => stableKey,
+      target: deleteFromMemoryCache,
+    });
+  }
+
   return {
     $memoryCache,
     addToMemoryCache,
     deleteFromMemoryCache,
   };
+}
+
+export function isCachedValueExpired<Done>(
+  cachedValue: MemoryCacheValue<Done>
+): boolean {
+  return !!cachedValue.expiresAt && Date.now() >= cachedValue.expiresAt;
 }

@@ -17,7 +17,7 @@ type OmittedEffect<Params, Done, Fail = Error> = Pick<
   "done" | "doneData" | "fail" | "failData" | "finally" | "pending" | "inFlight"
 >;
 
-export type MemoryCacheValue<Done> = { value: Done; expiresAt: number | null };
+export type MemoryCacheValue<Done> = { result: Done; expiresAt: number | null };
 export type MemoryCacheItem<Done> = {
   key: string;
   value: MemoryCacheValue<Done>;
@@ -25,10 +25,12 @@ export type MemoryCacheItem<Done> = {
 export type MemoryCache<Done> = Map<string, MemoryCacheValue<Done>>;
 
 export type CacheOptions = {
+  /** Maximum age of cache entry in milliseconds (ms) */
   maxAge?: number;
-  resetTrigger?: Units;
-  /** @default 100*/
+  /** Maximum cache size, default `100` */
   maxSize?: number;
+  /** Cache reset trigger */
+  resetTrigger?: Units;
 };
 
 export interface Query<Params, Done, Fail = Error>
@@ -37,6 +39,10 @@ export interface Query<Params, Done, Fail = Error>
 }
 
 export type QueryConfig<Params, Done> = {
+  /** Handler function that will be called with abort signal and params */
+  handler: BaseHandler<Params, Done>;
+  /** Optional name for the query */
+  name?: string;
   /**
    * Request cancellation strategy
    * @default "EVERY"
@@ -44,12 +50,16 @@ export type QueryConfig<Params, Done> = {
    * - "TAKE_LATEST" - cancels all requests except the latest one
    */
   strategy?: Strategy;
-  /** Event or array of events that will trigger request cancellation */
+  /**
+   * Trigger or array of triggers that will cause all requests to be aborted.
+   * Useful for global cancellation scenarios (e.g., logout, navigation, page close, etc.)
+   */
   abortAllTrigger?: Units;
-  /** Handler function that will be called with abort signal and params */
-  handler: BaseHandler<Params, Done>;
-  /** default `false` */
+  /**
+   * Enables in-memory caching for the query. Can be set to `true` to use default cache settings,
+   * or an object to provide custom cache options.
+   * When enabled, repeated requests with the same parameters will return cached results
+   * until the cache entry expires or is invalidated.
+   */
   cache?: boolean | CacheOptions;
-  /** Optional name for the query */
-  name?: string;
 };

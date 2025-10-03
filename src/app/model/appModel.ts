@@ -33,7 +33,7 @@ const $users = createStore<GetUsersResponseDto | null>(null).on(
 sample({
   clock: [appStarted, requestForced],
   fn: () => getRandomParams(),
-  target: getUsersQuery.start,
+  target: getUsersQuery,
 });
 
 export const appModel = {

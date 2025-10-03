@@ -1,4 +1,10 @@
-import { attach, createStore, type StoreWritable } from "effector";
+import {
+  attach,
+  createEvent,
+  createStore,
+  sample,
+  type StoreWritable,
+} from "effector";
 
 export function createAbortController(
   abortControllerStore?: StoreWritable<AbortController>
@@ -8,13 +14,18 @@ export function createAbortController(
 
   const abortFx = attach({
     source: $abortController,
-    effect(controller) {
-      controller.abort();
-      return new AbortController();
+    effect(prevController, updateController) {
+      prevController.abort();
+      return updateController;
     },
   });
 
-  $abortController.on(abortFx.doneData, (_, newController) => newController);
+  /** Abort previous and replace with new controller */
+  const replaceAbortController = createEvent<AbortController>();
 
-  return { $abortController, abortFx };
+  sample({ clock: replaceAbortController, target: abortFx });
+
+  sample({ clock: abortFx.doneData, target: $abortController });
+
+  return { $abortController, replaceAbortController };
 }

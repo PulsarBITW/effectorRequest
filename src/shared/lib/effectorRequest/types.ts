@@ -1,4 +1,4 @@
-import type { Effect, EventCallable, Unit } from "effector";
+import type { Unit } from "effector";
 
 // Duplicate types from effector as Units type is not exported from the library
 export type Tuple<T = unknown> = [T?, ...T[]];
@@ -11,11 +11,6 @@ export type BaseHandler<Params, Done> = (
 ) => Done;
 
 export type Strategy = "EVERY" | "TAKE_LATEST";
-
-type OmittedEffect<Params, Done, Fail = Error> = Pick<
-  Effect<Params, Done, Fail>,
-  "done" | "doneData" | "fail" | "failData" | "finally" | "pending" | "inFlight"
->;
 
 export type MemoryCacheValue<Done> = { result: Done; expiresAt: number | null };
 export type MemoryCacheItem<Done> = {
@@ -32,11 +27,6 @@ export type CacheOptions = {
   /** Cache reset trigger */
   resetTrigger?: Units;
 };
-
-export interface Query<Params, Done, Fail = Error>
-  extends OmittedEffect<Params, Done, Fail> {
-  start: EventCallable<Params>;
-}
 
 export type QueryConfig<Params, Done> = {
   /** Handler function that will be called with abort signal and params */

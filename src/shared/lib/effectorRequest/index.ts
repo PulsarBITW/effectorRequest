@@ -1,9 +1,3 @@
 export { createQuery } from "./createQuery";
-export { createAbortController } from "./createAbortController";
-export type {
-  Strategy,
-  QueryConfig,
-  Query,
-  CacheOptions,
-  BaseHandler,
-} from "./types";
+export { createAbortController } from "./concurrency/createAbortController";
+export type { Strategy, QueryConfig, CacheOptions, BaseHandler } from "./types";

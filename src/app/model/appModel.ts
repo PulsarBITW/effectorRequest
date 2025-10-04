@@ -15,10 +15,10 @@ const resetCache = createEvent();
 
 const getUsersQuery = createQuery({
   name: "getUsersQuery",
-  handler: (signal, params: GetUsersQueryParams) => getUsers(params, signal),
+  handler: (params: GetUsersQueryParams, signal) => getUsers(params, signal),
   abortAllTrigger: requestAbortForced,
-  strategy: "TAKE_LATEST",
-  cache: {
+  strategy: "TAKE_FIRST",
+  useCache: {
     resetTrigger: resetCache,
     maxAge: 30_000,
     maxSize: 5,
@@ -33,7 +33,7 @@ const $users = createStore<GetUsersResponseDto | null>(null).on(
 sample({
   clock: [appStarted, requestForced],
   fn: () => getRandomParams(),
-  target: getUsersQuery.start,
+  target: getUsersQuery,
 });
 
 export const appModel = {

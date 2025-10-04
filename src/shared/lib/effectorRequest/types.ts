@@ -1,4 +1,4 @@
-import type { Effect, EventCallable, Unit } from "effector";
+import type { Effect, Unit } from "effector";
 
 // Duplicate types from effector as Units type is not exported from the library
 export type Tuple<T = unknown> = [T?, ...T[]];
@@ -6,23 +6,24 @@ export type Units = Unit<any> | Tuple<Unit<any>>; // eslint-disable-line @typesc
 //
 
 export type BaseHandler<Params, Done> = (
-  abortSignal: AbortSignal,
-  params: Params
+  params: Params,
+  abortSignal: AbortSignal
 ) => Done;
 
-export type Strategy = "EVERY" | "TAKE_LATEST";
+export type ConcurrentHandler<Params, Done> =
+  | ((params: Params) => Done)
+  | Effect<Params, Done>;
 
-type OmittedEffect<Params, Done, Fail = Error> = Pick<
-  Effect<Params, Done, Fail>,
-  "done" | "doneData" | "fail" | "failData" | "finally" | "pending" | "inFlight"
->;
+export type Strategy = "EVERY" | "TAKE_LATEST" | "TAKE_FIRST";
 
-export type MemoryCacheValue<Done> = { result: Done; expiresAt: number | null };
-export type MemoryCacheItem<Done> = {
-  key: string;
-  value: MemoryCacheValue<Done>;
-};
-export type MemoryCache<Done> = Map<string, MemoryCacheValue<Done>>;
+export type CacheValue<Done> = { result: Done; expiresAt: number | null };
+export type CacheItem<Done> = { key: string; value: CacheValue<Done> };
+export interface Cache<Done> {
+  get: (key: string) => CacheValue<Done> | undefined;
+  add: (item: CacheItem<Done>) => void;
+  delete: (key: string) => boolean;
+  deleteExpired: (key: string) => void;
+}
 
 export type CacheOptions = {
   /** Maximum age of cache entry in milliseconds (ms) */
@@ -32,11 +33,6 @@ export type CacheOptions = {
   /** Cache reset trigger */
   resetTrigger?: Units;
 };
-
-export interface Query<Params, Done, Fail = Error>
-  extends OmittedEffect<Params, Done, Fail> {
-  start: EventCallable<Params>;
-}
 
 export type QueryConfig<Params, Done> = {
   /** Handler function that will be called with abort signal and params */
@@ -61,5 +57,5 @@ export type QueryConfig<Params, Done> = {
    * When enabled, repeated requests with the same parameters will return cached results
    * until the cache entry expires or is invalidated.
    */
-  cache?: boolean | CacheOptions;
+  useCache?: boolean | CacheOptions;
 };

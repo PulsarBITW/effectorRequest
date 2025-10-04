@@ -60,5 +60,6 @@ export function createMemoryCache<Done>(config?: CacheOptions): Cache<Done> {
     add,
     delete: deleteItem,
     deleteExpired,
+    checkIsExpired,
   };
 }

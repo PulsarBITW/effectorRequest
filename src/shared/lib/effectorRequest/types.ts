@@ -23,6 +23,7 @@ export interface Cache<Done> {
   add: (item: CacheItem<Done>) => void;
   delete: (key: string) => boolean;
   deleteExpired: (key: string) => void;
+  checkIsExpired: (value: CacheValue<Done>) => boolean;
 }
 
 export type CacheOptions = {

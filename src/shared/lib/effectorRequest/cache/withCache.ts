@@ -14,7 +14,8 @@ export function withCache<Params, Done>(
     const cachedValue = cache.get(stableKey);
 
     if (cachedValue !== undefined) {
-      return cloneDeep(cachedValue.result);
+      if (cache.checkIsExpired(cachedValue)) cache.delete(stableKey);
+      else return cloneDeep(cachedValue.result);
     }
 
     const result = await handler(params);

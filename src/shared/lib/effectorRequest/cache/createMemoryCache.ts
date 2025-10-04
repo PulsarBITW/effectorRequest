@@ -40,7 +40,9 @@ export function createMemoryCache<Done>(config?: CacheOptions): Cache<Done> {
   };
 
   const scheduleRemoval = (key: string) => {
-    setTimeout(() => deleteExpired(key), maxAge);
+    if (maxAge) {
+      setTimeout(() => deleteExpired(key), maxAge);
+    }
   };
 
   const add = (item: CacheItem<Done>) => {

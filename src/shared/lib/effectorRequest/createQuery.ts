@@ -1,31 +1,84 @@
-import { attach, createEffect, sample } from "effector";
+import {
+  createEffect,
+  createEvent,
+  sample,
+  type EventCallable,
+} from "effector";
 
-import type { QueryConfig } from "./types";
-import { createAbortController } from "./createAbortController";
+import type { ConcurrentHandler, QueryConfig } from "./types";
+import {
+  withEvery,
+  withTakeLatest,
+  createAbortController,
+  createAbortControllerGroup,
+  withTakeFirst,
+} from "./concurrency";
+import { withCache } from "./cache";
 
 export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
-  const { handler, name, strategy = "EVERY", abortAllTrigger } = config;
+  const {
+    handler,
+    name,
+    strategy = "EVERY",
+    abortAllTrigger,
+    useCache,
+  } = config;
 
-  const { $abortController, replaceAbortController } = createAbortController();
+  let concurrentHandler: ConcurrentHandler<Params, Done>;
+  let onAbortAll: EventCallable<void>;
+  let onFinally: EventCallable<void> | null = null;
+
+  switch (strategy) {
+    case "TAKE_LATEST": {
+      const { replaceAbortController } = createAbortController();
+
+      const onAbort = createEvent();
+      sample({
+        clock: onAbort,
+        fn: () => new AbortController(),
+        target: replaceAbortController,
+      });
+
+      concurrentHandler = withTakeLatest(handler, replaceAbortController);
+      onAbortAll = onAbort;
+      break;
+    }
+    case "TAKE_FIRST": {
+      const controllersGroup = createAbortControllerGroup();
+      concurrentHandler = withTakeFirst(handler, controllersGroup.add);
+      onAbortAll = onFinally = controllersGroup.abort;
+      break;
+    }
+    default: {
+      const { $abortController, replaceAbortController } =
+        createAbortController();
+
+      const onAbort = createEvent();
+      sample({
+        clock: onAbort,
+        fn: () => new AbortController(),
+        target: replaceAbortController,
+      });
+
+      concurrentHandler = withEvery(handler, $abortController);
+      onAbortAll = onAbort;
+    }
+  }
 
   let query;
 
-  if (strategy === "TAKE_LATEST") {
+  if (useCache) {
+    const cacheConfig = useCache === true ? {} : useCache;
+    const cachedHandler = withCache(concurrentHandler, cacheConfig);
+
     query = createEffect({
       name,
-      handler: (params: Params): Done => {
-        const abortController = new AbortController();
-        replaceAbortController(abortController);
-        return handler(abortController.signal, params);
-      },
+      handler: cachedHandler,
     });
   } else {
-    query = attach({
+    query = createEffect({
       name,
-      source: $abortController,
-      effect: async (abortController, params: Params): Promise<Done> => {
-        return handler(abortController.signal, params);
-      },
+      handler: concurrentHandler,
     });
   }
 
@@ -33,9 +86,12 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
     // @ts-expect-error Type is correct but TypeScript fails due to missing type exports from effector library
     sample({
       clock: abortAllTrigger,
-      fn: () => new AbortController(),
-      target: replaceAbortController,
+      target: onAbortAll,
     });
+  }
+
+  if (onFinally) {
+    sample({ clock: query.finally, target: onFinally });
   }
 
   return query;

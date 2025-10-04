@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { hashKey } from "../hashKey";
+import { hashKey } from "../utils";
 
 describe("hashKey", () => {
   it("should hash primitives correctly", () => {

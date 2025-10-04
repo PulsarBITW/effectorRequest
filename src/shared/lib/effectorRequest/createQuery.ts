@@ -30,38 +30,26 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
 
   switch (strategy) {
     case "TAKE_LATEST": {
-      const { replaceAbortController } = createAbortController();
-
-      const onAbort = createEvent();
-      sample({
-        clock: onAbort,
-        fn: () => new AbortController(),
-        target: replaceAbortController,
-      });
+      const { replaceAbortController, updateAbortController } =
+        createAbortController();
 
       concurrentHandler = withTakeLatest(handler, replaceAbortController);
-      onAbortAll = onAbort;
+      onAbortAll = updateAbortController;
       break;
     }
     case "TAKE_FIRST": {
       const controllersGroup = createAbortControllerGroup();
+
       concurrentHandler = withTakeFirst(handler, controllersGroup.add);
       onAbortAll = onFinally = controllersGroup.abort;
       break;
     }
     default: {
-      const { $abortController, replaceAbortController } =
+      const { $abortController, updateAbortController } =
         createAbortController();
 
-      const onAbort = createEvent();
-      sample({
-        clock: onAbort,
-        fn: () => new AbortController(),
-        target: replaceAbortController,
-      });
-
       concurrentHandler = withEvery(handler, $abortController);
-      onAbortAll = onAbort;
+      onAbortAll = updateAbortController;
     }
   }
 

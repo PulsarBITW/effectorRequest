@@ -22,10 +22,18 @@ export function createAbortController(
 
   /** Abort previous and replace with new controller */
   const replaceAbortController = createEvent<AbortController>();
+  /** Abort previous and replace with new controller */
+  const updateAbortController = createEvent();
 
   sample({ clock: replaceAbortController, target: abortFx });
 
+  sample({
+    clock: updateAbortController,
+    fn: () => new AbortController(),
+    target: abortFx,
+  });
+
   sample({ clock: abortFx.doneData, target: $abortController });
 
-  return { $abortController, replaceAbortController };
+  return { $abortController, replaceAbortController, updateAbortController };
 }

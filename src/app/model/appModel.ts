@@ -17,7 +17,7 @@ const getUsersQuery = createQuery({
   name: "getUsersQuery",
   handler: (params: GetUsersQueryParams, signal) => getUsers(params, signal),
   abortAllTrigger: requestAbortForced,
-  strategy: "TAKE_FIRST",
+  strategy: "TAKE_LATEST",
   useCache: {
     resetTrigger: resetCache,
     maxAge: 30_000,

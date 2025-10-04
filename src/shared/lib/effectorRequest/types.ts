@@ -44,6 +44,7 @@ export type QueryConfig<Params, Done> = {
    * @default "EVERY"
    * - "EVERY" - allows all requests to complete
    * - "TAKE_LATEST" - cancels all requests except the latest one
+   * - "TAKE_FIRST" -  the first request will be executed, all subsequent requests will be skipped
    */
   strategy?: Strategy;
   /**

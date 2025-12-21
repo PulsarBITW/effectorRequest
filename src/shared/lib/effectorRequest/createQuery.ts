@@ -21,7 +21,7 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
 
   let concurrentHandler: ConcurrentHandler<Params, Done>;
 
-  const query = createEffect<Params, Awaited<Done>, Error>({ name });
+  const query = createEffect<Params, Done, Error>({ name });
 
   switch (strategy) {
     case "TAKE_LATEST": {
@@ -32,7 +32,13 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
 
       if (abortAllTrigger) {
         sample({
-          /** recommended way to type a tuple for clock, Unit<unknown>[] matches Unit<unknown> */
+          /**
+           * Effector-specific typing case!
+           * Recommended way: cast to a single unit type.
+           * This is valid because if the type doesn't accept [Event, Event], it won't accept Event either,
+           * and there's no difference between one unit vs multiple units.
+           * sample({ clock: units as Unit })
+           */
           clock: abortAllTrigger as Unit<unknown>,
           target: updateAbortController,
         });
@@ -73,9 +79,9 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
   if (useCache) {
     const cacheConfig = useCache === true ? {} : useCache;
     const cachedHandler = withCache(concurrentHandler, cacheConfig);
-    query.use(cachedHandler as Parameters<typeof query.use>[0]);
+    query.use(cachedHandler);
   } else {
-    query.use(concurrentHandler as Parameters<typeof query.use>[0]);
+    query.use(concurrentHandler);
   }
 
   return query;

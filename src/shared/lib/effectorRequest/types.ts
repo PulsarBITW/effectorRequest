@@ -5,10 +5,10 @@ export type Units<T = unknown> = Unit<T> | Unit<T>[];
 export type BaseHandler<Params, Done> = (
   params: Params,
   abortSignal: AbortSignal
-) => Done;
+) => Done | Promise<Done>;
 
 export type ConcurrentHandler<Params, Done> =
-  | ((params: Params) => Done)
+  | ((params: Params) => Done | Promise<Done>)
   | Effect<Params, Done>;
 
 export type Strategy = "EVERY" | "TAKE_LATEST" | "TAKE_FIRST";

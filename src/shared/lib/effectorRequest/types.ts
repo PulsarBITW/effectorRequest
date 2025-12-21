@@ -1,9 +1,6 @@
 import type { Effect, Unit } from "effector";
 
-// Duplicate types from effector as Units type is not exported from the library
-export type Tuple<T = unknown> = [T?, ...T[]];
-export type Units = Unit<any> | Tuple<Unit<any>>; // eslint-disable-line @typescript-eslint/no-explicit-any
-//
+export type Units<T = unknown> = Unit<T> | Unit<T>[];
 
 export type BaseHandler<Params, Done> = (
   params: Params,

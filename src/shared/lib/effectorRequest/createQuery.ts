@@ -1,9 +1,4 @@
-import {
-  createEffect,
-  createEvent,
-  sample,
-  type EventCallable,
-} from "effector";
+import { createEffect, sample, type Unit } from "effector";
 
 import type { ConcurrentHandler, QueryConfig } from "./types";
 import {
@@ -25,8 +20,8 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
   } = config;
 
   let concurrentHandler: ConcurrentHandler<Params, Done>;
-  let onAbortAll: EventCallable<void>;
-  let onFinally: EventCallable<void> | null = null;
+
+  const query = createEffect<Params, Awaited<Done>, Error>({ name });
 
   switch (strategy) {
     case "TAKE_LATEST": {
@@ -34,14 +29,30 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
         createAbortController();
 
       concurrentHandler = withTakeLatest(handler, replaceAbortController);
-      onAbortAll = updateAbortController;
+
+      if (abortAllTrigger) {
+        sample({
+          /** recommended way to type a tuple for clock, Unit<unknown>[] matches Unit<unknown> */
+          clock: abortAllTrigger as Unit<unknown>,
+          target: updateAbortController,
+        });
+      }
       break;
     }
     case "TAKE_FIRST": {
       const controllersGroup = createAbortControllerGroup();
 
       concurrentHandler = withTakeFirst(handler, controllersGroup.add);
-      onAbortAll = onFinally = controllersGroup.abort;
+
+      if (abortAllTrigger) {
+        sample({
+          clock: abortAllTrigger as Unit<unknown>,
+          target: controllersGroup.abort,
+        });
+      }
+
+      sample({ clock: query.finally, target: controllersGroup.abort });
+
       break;
     }
     default: {
@@ -49,37 +60,22 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
         createAbortController();
 
       concurrentHandler = withEvery(handler, $abortController);
-      onAbortAll = updateAbortController;
+
+      if (abortAllTrigger) {
+        sample({
+          clock: abortAllTrigger as Unit<unknown>,
+          target: updateAbortController,
+        });
+      }
     }
   }
-
-  let query;
 
   if (useCache) {
     const cacheConfig = useCache === true ? {} : useCache;
     const cachedHandler = withCache(concurrentHandler, cacheConfig);
-
-    query = createEffect({
-      name,
-      handler: cachedHandler,
-    });
+    query.use(cachedHandler as Parameters<typeof query.use>[0]);
   } else {
-    query = createEffect({
-      name,
-      handler: concurrentHandler,
-    });
-  }
-
-  if (abortAllTrigger) {
-    // @ts-expect-error Type is correct but TypeScript fails due to missing type exports from effector library
-    sample({
-      clock: abortAllTrigger,
-      target: onAbortAll,
-    });
-  }
-
-  if (onFinally) {
-    sample({ clock: query.finally, target: onFinally });
+    query.use(concurrentHandler as Parameters<typeof query.use>[0]);
   }
 
   return query;

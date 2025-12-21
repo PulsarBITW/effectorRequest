@@ -1,4 +1,4 @@
-import { createEffect, sample } from "effector";
+import { createEffect, sample, type Unit } from "effector";
 
 import type { CacheItem, CacheValue, CacheOptions, Cache } from "../types";
 
@@ -52,8 +52,7 @@ export function createMemoryCache<Done>(config?: CacheOptions): Cache<Done> {
   };
 
   const resetCacheFx = createEffect(clearCache);
-  // @ts-expect-error Type is correct but TypeScript fails due to missing type exports from effector library
-  sample({ clock: resetTrigger, target: resetCacheFx });
+  sample({ clock: resetTrigger as Unit<unknown>, target: resetCacheFx });
 
   return {
     get,

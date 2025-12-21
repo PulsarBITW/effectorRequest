@@ -27,7 +27,6 @@ export function withEvery<Params, Done>(
   handler: BaseHandler<Params, Done>,
   $abortController: StoreWritable<AbortController>
 ): ConcurrentHandler<Params, Done> {
-  // @ts-expect-error Awaited trouble
   return attach({
     source: $abortController,
     effect: (abortController, params: Params) =>

@@ -8,7 +8,7 @@ export function withTakeLatest<Params, Done>(
   return (params: Params) => {
     const abortController = new AbortController();
     replaceAbortController(abortController);
-    return handler(params, abortController.signal);
+    return handler(abortController.signal, params);
   };
 }
 
@@ -19,7 +19,7 @@ export function withTakeFirst<Params, Done>(
   return (params: Params) => {
     const abortController = new AbortController();
     addController(abortController);
-    return handler(params, abortController.signal);
+    return handler(abortController.signal, params);
   };
 }
 
@@ -30,6 +30,6 @@ export function withEvery<Params, Done>(
   return attach({
     source: $abortController,
     effect: (abortController, params: Params) =>
-      handler(params, abortController.signal),
+      handler(abortController.signal, params),
   });
 }

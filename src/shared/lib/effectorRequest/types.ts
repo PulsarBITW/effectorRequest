@@ -3,8 +3,8 @@ import type { Effect, Unit } from "effector";
 export type Units<T = unknown> = Unit<T> | Unit<T>[];
 
 export type BaseHandler<Params, Done> = (
-  params: Params,
-  abortSignal: AbortSignal
+  abortSignal: AbortSignal,
+  params: Params
 ) => Done | Promise<Done>;
 
 export type ConcurrentHandler<Params, Done> =

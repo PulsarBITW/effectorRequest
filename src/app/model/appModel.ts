@@ -15,7 +15,7 @@ const resetCache = createEvent();
 
 const getUsersQuery = createQuery({
   name: "getUsersQuery",
-  handler: (params: GetUsersQueryParams, signal) => getUsers(params, signal),
+  handler: (signal, params: GetUsersQueryParams) => getUsers(params, signal),
   abortAllTrigger: requestAbortForced,
   strategy: "TAKE_LATEST",
   useCache: {

@@ -10,7 +10,9 @@ import {
 } from "./concurrency";
 import { withCache } from "./cache";
 
-export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
+export function createQuery<Params = void, Done = void, Fail = Error>(
+  config: QueryConfig<Params, Done>,
+) {
   const {
     handler,
     name,
@@ -21,7 +23,7 @@ export function createQuery<Params, Done>(config: QueryConfig<Params, Done>) {
 
   let concurrentHandler: ConcurrentHandler<Params, Done>;
 
-  const query = createEffect<Params, Done, Error>({ name });
+  const query = createEffect<Params, Done, Fail>({ name });
 
   switch (strategy) {
     case "TAKE_LATEST": {
